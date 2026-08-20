@@ -1,0 +1,10 @@
+# Python cache files
+__pycache__/
+*.pyc
+
+# Local crypto/demo files
+assignment_crypto.md
+
+# Ignore generated project artifacts
+client/__pycache__/
+server/__pycache__/

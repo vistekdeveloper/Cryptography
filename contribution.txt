@@ -1,0 +1,17 @@
+Contribution Summary
+
+
+--------------------------------------------------------------------------------------------
+Name: Steven
+- Implemented the HMAC integrity protection for the menu transfer on the server side.
+  - Server file: server/server.py
+  - Relevant section: HMAC generation and sending of menu + tag
+  - Example reference: server/server.py, around the GET_MENU handling block
+
+- Implemented the HMAC verification logic on the client side.
+  - Client file: client/client.py
+  - Relevant section: receiving menu data and verifying the HMAC before accepting the file
+  - Example reference: client/client.py, around the GET_MENU receive block
+
+I chose HMAC because our application operates in an environment where the client and server can securely store a pre-shared key.
+---------------------------------------------------------------------------------------------
