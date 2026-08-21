@@ -9,6 +9,7 @@ import datetime         # for composing date/time stamp
 import sys              # handle system error
 import traceback        # for print_exc function
 import time             # for delay purpose
+import ssl
 global host, port
 
 cmd_GET_MENU = "GET_MENU"
@@ -106,6 +107,13 @@ def start_server():
             # assign ip and port
             ip, port = str(addr[0]), str(addr[1])
             print('Accepting connection from ' + ip + ':' + port)
+
+            # TLS wrap should happen here, immediately after accept()
+            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+            conn = context.wrap_socket(conn, server_side=True)
+            ##-----------------------------------------------------------------------
+
             try:
                 Thread(target=client_thread, args=(conn, ip, port)).start()
             except:
