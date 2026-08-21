@@ -6,6 +6,7 @@ Name: Steven
 - Implemented the HMAC integrity check for the menu transfer from the server to client.
 - Implemented TLS protection for the socket communication to secure data in transit on public Wi-Fi.
 - Stored the keys in a .env file so both the client and server can load the same key at runtime.
+- Wrote the RSA digital signature for client and server to verify
 
 I chose HMAC because our application operates in an environment where the client and server can securely store a pre-shared key. 
 I also implemented TLS to protect the communication channel when the application is used over public Wi-Fi.

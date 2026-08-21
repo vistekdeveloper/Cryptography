@@ -14,6 +14,10 @@ import ssl
 import os
 from dotenv import load_dotenv  ##Imports the function to load environment variables from a .env to os
 from pathlib import Path  ##Imports Path to handle file system paths 
+from Crypto.Random import get_random_bytes
+from Crypto.Signature import pkcs1_15 
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
 global host, port
 
 host = socket.gethostname()
@@ -23,8 +27,11 @@ cmd_END_DAY = b"CLOSING"
 menu_file = "menu.csv"
 return_file = "day_end.csv"
 
-BASE_DIR = Path(__file__).resolve().parent.parent  ##Get the root directory path
-load_dotenv(BASE_DIR / ".env") ##Load .env file from that root folder
+RSA_PRIVATE_KEY_FILE = "rsa_private_key.pem"
+RSA_PUBLIC_KEY_FILE = "rsa_public_key.pem"
+
+BASE_DIR = Path(__file__).resolve().parent  ##Get the folder path
+load_dotenv(BASE_DIR / ".env") ##Load .env file from this folder
 
 SECRET_KEY = os.getenv("HMAC_PRESHARED_KEY", "").encode("utf-8") ##Fetch the HMAC_PRESHARED_KEY from the .env file and encode it to bytes
 print("HMAC_PRESHARED_KEY:", SECRET_KEY.decode())  ##Print the HMAC_PRESHARED_KEY for debugging purposes
@@ -99,7 +106,25 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
             print("file not found : " + return_file)
             sys.exit(0)
 
-        tls_socket.sendall(content) ##Send the whole content of the file to the server
+        digest=SHA256.new(content)  ##Create a SHA256 hash of the content of the file
+        print("digest:", digest.hexdigest())
+
+        with open(RSA_PRIVATE_KEY_FILE, "rb") as f:
+            private_key = RSA.import_key(f.read())  # Load the RSA private key from the PEM file
+
+        for b in digest.digest():
+            print("{0:02x}".format(b),end="")
+        print("\n")
+        signer = pkcs1_15.new(private_key)
+        signature=signer.sign(digest) ##generate the signature of the digest using the private key
+        print("Signature:")
+        for b in signature:
+            print("{0:02x}".format(b),end="")
+        print("\n")
+
+        payload = content + b"|" + signature
+        print("Payload:", payload)
+        tls_socket.sendall(content + b"|" + signature) ##Send the whole content + signature to the server
         tls_socket.shutdown(socket.SHUT_WR) ##Inform server that client is done writing
 
 print('Sale of the day sent to server')

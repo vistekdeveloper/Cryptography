@@ -13,6 +13,10 @@ import time             # for delay purpose
 import ssl
 from dotenv import load_dotenv
 from pathlib import Path
+from Crypto.Random import get_random_bytes
+from Crypto.Signature import pkcs1_15 
+from Crypto.PublicKey import RSA
+from Crypto.Hash import SHA256
 global host, port
 
 cmd_GET_MENU = "GET_MENU"
@@ -20,13 +24,15 @@ cmd_END_DAY = "CLOSING"
 default_menu = "menu_today.txt"
 default_save_base = "result-"
 
+client_rsa_public_key_file = "client_rsa_public_key.pem"
+
 host = socket.gethostname() # get the hostname or ip address
 port = 8888                 # The port used by the server
 
 ##Stores the secret keys in environment variables and loads them using dotenv for security purposes. 
 ##This avoids hardcoding sensitive information in the code. (Steven)
-BASE_DIR = Path(__file__).resolve().parent.parent  ##Get the root directory path
-load_dotenv(BASE_DIR / ".env") ##Load .env file from that root folder
+BASE_DIR = Path(__file__).resolve().parent  ##Get the folder path
+load_dotenv(BASE_DIR / ".env") ##Load .env file from this folder
 
 SECRET_KEY = os.getenv("HMAC_PRESHARED_KEY", "").encode("utf-8") ##Fetch the HMAC_PRESHARED_KEY from the .env file and encode it to bytes
 
@@ -61,6 +67,7 @@ def process_connection( conn , ip_addr, MAX_BUFFER_SIZE):
                 src_file.close()
                 print("Processed SENDING menu") 
                 return
+            
             elif cmd_END_DAY in usr_cmd: # ask for to save end day order
                 #Hints: the net_bytes after the cmd_END_DAY may be encrypted. 
                 now = datetime.datetime.now()
@@ -69,8 +76,35 @@ def process_connection( conn , ip_addr, MAX_BUFFER_SIZE):
 
                 # Hints: net_bytes may be an encrypted block of message.
                 # e.g. plain_bytes = my_decrypt(net_bytes)
-                dest_file.write( net_bytes[ len(cmd_END_DAY): ] ) # remove the CLOSING header    
-                blk_count = blk_count + 1
+                payload = net_bytes[len(cmd_END_DAY):]  # remove "CLOSING"
+                while b"|" not in payload:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    payload += chunk
+
+                if b"|" not in payload:
+                    raise ValueError("No signature separator in payload")
+
+                content, signature = payload.split(b"|", 1)
+
+                ##Fetch the client public key to generate the signature and verify(Steven)
+                pub_key = RSA.import_key(open(client_rsa_public_key_file, "rb").read())
+                digest = SHA256.new(content)
+                verifier = pkcs1_15.new(pub_key)
+
+                try:
+                    verifier.verify(digest, signature)
+                    print("The signature is valid")
+                except:
+                    print("The signature is not valid")
+
+                dest_file.write(content)   # save only file content
+                print("wrote content to file")
+
+                blk_count += 1
+                # dest_file.write( net_bytes[ len(cmd_END_DAY): ] ) # remove the CLOSING header    
+                # blk_count = blk_count + 1
         else:  # write subsequent blocks of END_DAY message block
             # Hints: net_bytes may be an encrypted block of message.
             net_bytes = conn.recv(MAX_BUFFER_SIZE)
