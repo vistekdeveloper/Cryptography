@@ -3,6 +3,7 @@
 #------------------------------------------------------------------------------------------
 import hashlib
 import hmac
+import os
 from threading import Thread    # for handling task in separate jobs we need threading
 import socket           # tcp protocol
 import datetime         # for composing date/time stamp
@@ -10,6 +11,8 @@ import sys              # handle system error
 import traceback        # for print_exc function
 import time             # for delay purpose
 import ssl
+from dotenv import load_dotenv
+from pathlib import Path
 global host, port
 
 cmd_GET_MENU = "GET_MENU"
@@ -20,10 +23,17 @@ default_save_base = "result-"
 host = socket.gethostname() # get the hostname or ip address
 port = 8888                 # The port used by the server
 
+##Stores the secret keys in environment variables and loads them using dotenv for security purposes. 
+##This avoids hardcoding sensitive information in the code. (Steven)
+BASE_DIR = Path(__file__).resolve().parent.parent  ##Get the root directory path
+load_dotenv(BASE_DIR / ".env") ##Load .env file from that root folder
 
+SECRET_KEY = os.getenv("HMAC_PRESHARED_KEY", "").encode("utf-8") ##Fetch the HMAC_PRESHARED_KEY from the .env file and encode it to bytes
 
-SECRET_KEY = b"#B5Gh6eEwl$Me7" #HMAC
-AES_GCM_KEY = b"0123456789abcdef0123456789abcdef"  # 32 bytes = AES-256 key
+AES_GCM_KEY = os.getenv("AES_GCM_KEY", "").encode("utf-8") ##Fetch the AES_GCM_KEY from the .env file and encode it to bytes
+print("AES_GCM_KEY:", AES_GCM_KEY.decode())  ##Print the AES_GCM_KEY for debugging purposes
+
+##------------------------------------------------------------------------------------------------
 
 
 def process_connection( conn , ip_addr, MAX_BUFFER_SIZE):  
@@ -108,10 +118,13 @@ def start_server():
             ip, port = str(addr[0]), str(addr[1])
             print('Accepting connection from ' + ip + ':' + port)
 
-            # TLS wrap should happen here, immediately after accept()
+            ##TLS wrap the connection socket to secure the com between client and server(Steven)
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
             context.load_cert_chain(certfile="server.crt", keyfile="server.key")
             conn = context.wrap_socket(conn, server_side=True)
+
+            TLS_info = conn.cipher()
+            print(TLS_info)
             ##-----------------------------------------------------------------------
 
             try:

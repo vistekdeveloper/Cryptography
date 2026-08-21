@@ -11,6 +11,9 @@ import sys              # handle system error
 import socket
 import time
 import ssl
+import os
+from dotenv import load_dotenv  ##Imports the function to load environment variables from a .env to os
+from pathlib import Path  ##Imports Path to handle file system paths 
 global host, port
 
 host = socket.gethostname()
@@ -20,18 +23,24 @@ cmd_END_DAY = b"CLOSING"
 menu_file = "menu.csv"
 return_file = "day_end.csv"
 
-SECRET_KEY = b"#B5Gh6eEwl$Me7" #HMAC
+BASE_DIR = Path(__file__).resolve().parent.parent  ##Get the root directory path
+load_dotenv(BASE_DIR / ".env") ##Load .env file from that root folder
+
+SECRET_KEY = os.getenv("HMAC_PRESHARED_KEY", "").encode("utf-8") ##Fetch the HMAC_PRESHARED_KEY from the .env file and encode it to bytes
+print("HMAC_PRESHARED_KEY:", SECRET_KEY.decode())  ##Print the HMAC_PRESHARED_KEY for debugging purposes
 
 ##Set up TLS context and wrap the socket for secure communication--------
 context = ssl.create_default_context()
 context.check_hostname = False
 context.verify_mode = ssl.CERT_NONE
 
-
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as raw_socket:
     ##create a TLS socket and wrap the raw socket with it (Steven)
     with context.wrap_socket(raw_socket, server_hostname=host) as tls_socket:
         tls_socket.connect((host, port)) ##Connect to the server using the TLS socket
+
+        TLS_info = tls_socket.cipher() 
+        print(TLS_info)
     
         tls_socket.sendall(cmd_GET_MENU) 
         data = tls_socket.recv(4096)
@@ -60,6 +69,9 @@ raw_socket.close()
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as my_socket:
     with context.wrap_socket(my_socket, server_hostname=host) as tls_socket:
         tls_socket.connect((host, port)) ##TLS socket connect to the server
+
+        TLS_info = tls_socket.cipher()
+        print(TLS_info)
 
         tls_socket.sendall(cmd_END_DAY) 
         ##-----------------------------------------------------------------------

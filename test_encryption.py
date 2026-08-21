@@ -6,15 +6,20 @@ KEY = b"1234567890abcdef"   # 16 bytes = AES-128
 with open("server/menu_today.txt", "rb") as f:
     data = f.read()
 
-menu = pad(data, AES.block_size)
-print("Padded:", menu.hex())
+menu = pad(data, AES.block_size) ##pad the data to 16bytes block size
+print("Padded:", menu.hex(), "\n")
 
-cipher = AES.new(KEY, AES.MODE_ECB)
-print("Cipher:", cipher)
-encrypted_data = cipher.encrypt(menu)
-print("Encrypted:", encrypted_data.hex())
+cipher = AES.new(KEY, AES.MODE_ECB) ##create a new AES cipher object in ECB mode
+print("Cipher:", cipher, "\n")
 
-decipher = AES.new(KEY, AES.MODE_ECB)
-decrypted = unpad(decipher.decrypt(encrypted_data), AES.block_size)
+encrypted_data = cipher.encrypt(menu) ##encrypt the padded data using the cipher object
+print("Encrypted:", encrypted_data.hex(), "\n")
 
-print("Recovered:", decrypted.decode("utf-8", errors="replace"))
+decipher = AES.new(KEY, AES.MODE_ECB) ##create a new AES cipher object in ECB mode for decryption
+print("Decipher:", decipher, "\n")
+
+decrypted = decipher.decrypt(encrypted_data) ##decrypt the encrypted data
+print("Decrypted:", decrypted.hex(), "\n")
+
+unpadded_data = unpad(decrypted, AES.block_size) ##unpad the decrypted data to get the original data
+print("Original data:", unpadded_data.decode())

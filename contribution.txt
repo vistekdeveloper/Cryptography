@@ -5,7 +5,12 @@ Contribution Summary
 Name: Steven
 - Implemented the HMAC integrity check for the menu transfer from the server to client.
 - Implemented TLS protection for the socket communication to secure data in transit on public Wi-Fi.
+- Stored the keys in a .env file so both the client and server can load the same key at runtime.
 
-I chose HMAC because our application operates in an environment where the client and server can securely store a pre-shared key.
+I chose HMAC because our application operates in an environment where the client and server can securely store a pre-shared key. 
 I also implemented TLS to protect the communication channel when the application is used over public Wi-Fi.
+The AES and HMAC_PRESHARED_KEY key is stored in .env because it is a secret used by the application code,
+whereas the server.key is not stored in .env because it is the server's private TLS key, 
+which must remain on the server side and not be treated as a normal secret value as anyone with the 
+key can impersonate the server.
 ---------------------------------------------------------------------------------------------
