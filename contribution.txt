@@ -15,3 +15,30 @@ Name: Steven
 
 I chose HMAC because our application operates in an environment where the client and server can securely store a pre-shared key.
 ---------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+Name: Aniq
+- Implemented AES-GCM confidentiality for the day-closing report, in transit and at rest.
+ - Client file: client/client.py (closing send block)
+ - Server file: server/server.py (closing receive/verify block)
+- Implemented RSA 2048 digital signature for non repudiation of the day closing report.
+ - gen_keys.py generates the RSA key pair (client keeps the private keym, server gets the publick key)
+
+I chose AES-GCM because it provides encryption and a built in authenticity check(the tag) in one step,
+and RSA-2048 with SHA-256 for signature because it is a standard, well-supported non-repudiation scheme.
+--------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------
+Name: Andrew
+
+- Implemented and tested AES-GCM encryption for the day-closing sales report.
+
+- Updated the client-side CLOSING process to:
+  - Read the day_end.csv sales file.
+  - Encrypt the sales data using AES-256-GCM before it is sent to the server.
+  - Generate and transmit the nonce, authentication tag, and ciphertext.
+
+- Updated the server-side CLOSING process to:
+  - Receive the encrypted sales-data payload.
+  - Extract the nonce, authentication tag, and ciphertext.
+  - Decrypt and verify the sales data before saving the recovered report.
+
+I chose AES-GCM because it provides confidentiality for the sales data and an authentication tag that detects any modification to the encrypted data during transmission.
